@@ -130,3 +130,19 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 追加（CORSの設定）
 # 本番環境ではReactのURLのみ許可）
 CORS_ALLOW_ALL_ORIGINS = True
+
+# 追加
+# Django REST Framework(REST APIの設定)の共通ルール 
+REST_FRAMEWORK = {
+    # 認証方法（ユーザーが誰かを判別）をSessionに統一
+    # → Djangoの通常ログイン(/admin)の仕組みをそのまま使う
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+
+    # 権限（アクセスして良いか）を「ログイン必須」にする
+    #   → 原則として、ログインしている人だけAPIを使えるようにする
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
