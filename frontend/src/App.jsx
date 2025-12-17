@@ -14,11 +14,9 @@ function App() {
   // コンポーネント初回表示時にのみ実行
   useEffect(() => {
     // ① 疎通確認（Ping）　  // バックエンド API との疎通確認を行う 
-    // 臨時修正 sta
     // 「http://127.0.0.1:8000」から「http://localhost:8000」へ変更 
     // そうじゃないと、未ログイン扱い（IsAuthenticatedで弾かれてる）になる
     fetch("http://localhost:8000/api/ping/", {
-    // 臨時修正 end
       // Django のセッション認証を利用するため、Cookie をリクエストに含める
       credentials: "include",
     })
