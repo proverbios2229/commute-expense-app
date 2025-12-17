@@ -158,11 +158,9 @@ CORS_ALLOW_ALL_ORIGINS = True
 #追記 end
 
 
-# 臨時追記 sta
 # Cookie（セッション）を含むクロスオリジン通信を許可する設定。
 # REACT 側の fetch で credentials: "include" を使う場合に必須。
 
 # これが False のままだと、ログイン済みでも、API 側では「未ログイン」と判断される
 # React（App.jsx）の「credentials: "include"」を正しく機能させるために必要
 CORS_ALLOW_CREDENTIALS = True
-# 臨時追記 end
