@@ -39,12 +39,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     #追加
-    "rest_framework",
-    "corsheaders",
-    "expenses",
+    'rest_framework',
+    'corsheaders',
+    'expenses',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware', # 追加
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -127,10 +129,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# 追加（CORSの設定）
-# 本番環境ではReactのURLのみ許可）
-CORS_ALLOW_ALL_ORIGINS = True
-
 # 追加
 # Django REST Framework(REST APIの設定)の共通ルール 
 REST_FRAMEWORK = {
@@ -146,3 +144,79 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
 }
+
+#追記 sta
+# ==============================
+# CORS設定
+# ==============================
+
+# React(localhost:5137)など、Djangoとは異なるオジリンからのAPIアクセスを許可する設定
+# ブラウザによる「別ドメイン通信ブロック」を防ぐために必要。
+
+# ※本番環境では必ず False にし、許可オリジンを限定すること。
+CORS_ALLOW_ALL_ORIGINS = True
+#追記 end
+
+
+# 臨時追記 sta
+# Cookie（セッション）を含むクロスオリジン通信を許可する設定。
+# REACT 側の fetch で credentials: "include" を使う場合に必須。
+
+# これが False のままだと、ログイン済みでも、API 側では「未ログイン」と判断される
+# React（App.jsx）の「credentials: "include"」を正しく機能させるために必要
+CORS_ALLOW_CREDENTIALS = True
+# 臨時追記 end
+
+
+"""
+# 以下は臨時追記したものだったが、不要だったため、コメントアウト
+# ==============================
+# CSRF対策設定
+# ==============================
+
+# Django が「信頼してよいフロントエンドのURL」を指定する。
+# セッション認証 + API通信を行う場合、React のURLを明示的に許可する必要がある。
+#
+# これを設定しないと、Post / PUT / DELETE などで 403 エラーになることがある。
+# 実際、「"GET /api/ping/ HTTP/1.1" 403 58」というエラーになった。
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+]
+"""
+
+
+"""
+# NOTE:
+# React(5173) → Django(8000) のセッションCookie送信問題を疑い、
+# SameSite/secure設定を一時的に追加したが、
+# 原因は localhost と 127.0.0.1 の混在による Cookie 不送信だった。
+# ホスト統一＋Cookie削除で解消したため、本設定は不要としてコメントアウト。
+# ==============================
+# セッション / CSRF Cookie 設定（開発用）
+# ==============================
+
+# React（localhost:5173）と Django（localhost:8000）は
+# 「別オリジン」になるため、デフォルト設定では
+# セッション Cookie がブラウザから送信されない。
+#
+# その結果、ログインしていても API 側では
+# 「未ログイン」と判定され、403 エラーになる。
+#
+# 下記設定は、開発環境で React + Django を連携させるためのもの。
+# ※ 本番環境では HTTPS 前提の設定に変更すること。
+
+# セッション Cookie をクロスオリジン通信でも送信可能にする
+SESSION_COOKIE_SAMESITE = "None"
+
+# 開発環境（http）では Secure=False にする
+# ※ 本番（https）では True にする
+SESSION_COOKIE_SECURE = False
+
+# CSRF Cookie も同様にクロスオリジン通信を許可
+CSRF_COOKIE_SAMESITE = "None"
+
+# 開発環境用（http）
+CSRF_COOKIE_SECURE = False
+
+
+"""

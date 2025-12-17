@@ -9,7 +9,15 @@ from .serializers import CommuterPassSerializer, ExpenseSerializer
 from .services.fare import calculate_fare
 from .services.exceptions import FareNotFoundError
 
+from rest_framework.permissions import AllowAny #臨時追加
+# これが無い限り、IsAuthenticated により 403 は必ず出る
+
 class PingView(APIView):
+    
+    # 疎通確認用APIのため、未ログインユーザーからのアクセスも許可する
+    # （本番APIでは IsAuthenticated を使用する
+    permission_classes = [AllowAny]
+    
     def get(self, request):
         return Response({"message": "ok"})
     
