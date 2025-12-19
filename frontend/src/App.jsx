@@ -1,51 +1,163 @@
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { fetchExpenses } from "./api";
 
 function App() {
-  // API から取得したメッセージを保持する state
-  // 初期表示時は空文字
-  // --- Ping 用 state ---- 
-  const [message, setMessage] = useState("");
+  // -------------------------
+  // Expenses一覧用 state
+  // -------------------------
+  const [expenses, setExpenses] = useState([]); //申請一覧（APIレスポンス）
+  const [error, setError] = useState(""); // 一覧取得失敗などのエラー表示
 
-  // --- Expenses一覧用 state ---
-  const [expenses, setExpenses] = useState([]);
-  const [error, setError] = useState("");
+  // -------------------------
+  // 送信（登録）用の state
+  // -------------------------
+  const [submitError, setSubmitError] = useState(""); // 登録時のエラー表示
+  const [isSubmitting, setIsSubmitting] = useState(false); // 二重送信帽子 & UI制御
 
-  // コンポーネント初回表示時にのみ実行
+  // -------------------------
+  // フォール入力用の state (controlled components)
+  // React が入力値を state で管理する方式
+  // -------------------------
+  const [date, setDate] = useState("");
+  const [fromStation, setFromStation] = useState("");
+  const [toStation, setToStation] = useState("");
+  const [isRoundTrip, setIsRoundTrip] = useState(false);
+  const [note, setNote] = useState("");
+
+  /**
+   *  申請一覧を取得して state に反映する
+   *  - 初回表示時 / 再読み込みボタン押下時に利用
+   *  - API失敗時は画面にエラー表示する
+   */
+  const loadExpenses = async () => {
+    setError(""); // 過去のエラー表示をクリア
+    try {
+      const data = await fetchExpenses(); // GET /api/expenses/
+      setExpenses(data);
+    } catch (e) {
+      // fetchExpenses 側で throw されたメッセージを表示
+      setError(e.message);
+    }
+  };
+
+  // 初回レンダリング時に一回だけ一覧を読み込む
   useEffect(() => {
-    // ① 疎通確認（Ping）　  // バックエンド API との疎通確認を行う 
-    // 「http://127.0.0.1:8000」から「http://localhost:8000」へ変更 
-    // そうじゃないと、未ログイン扱い（IsAuthenticatedで弾かれてる）になる
-    fetch("http://localhost:8000/api/ping/", {
-      // Django のセッション認証を利用するため、Cookie をリクエストに含める
-      credentials: "include",
-    })
-    // レスポンスを JSON 形式に変換
-    .then((res) => res.json())
-    // API から返却された message を state にセット
-    .then((data) => setMessage(data.message))
-    // 通信エラー時はコンソールに出力
-    .catch((err) => console.error(err));
-
-    // ② Expenses一覧の取得
-    fetchExpenses() 
-    // 成功したら expenses にセット
-    .then(setExpenses)
-    // 失敗したら画面に表示するエラーにセット
-    .catch((e) => setError(e.message));
+    loadExpenses();
+    // 依存配列 [] は「初回だけ実行」の意味
   }, []);
 
+  /**
+   * フォーム送信時（新規申請登録）
+   * - フロント側で最低限の入力チェック
+   * - API に POST して作成
+   * - 成功したら一覧に即反映して UX を良くする
+   */
+  const onSubmit = async (e) => {
+    // fomr のデフォルト動作（ページリロード）を止める
+    e.prevemtDefault();
+
+    setSubmitError("") // 過去の送信エラーをクリア
+
+    // 最低バリデーション（UX改善）
+    // 本格的な検証はバックエンドでも必ず行う（フロントは補助）
+    if (!data || !fromStation || !toStation) {
+      setSubmitError("日付・出発駅・目的駅は必須です");
+      return;
+    }
+
+    setIsSubmitting(true); // 送信中ふらぐON（ボタンdisabledなどに使う）
+    try {
+      // APIへ送る payload（DRF のフィールド名に合わせる）
+      const created = await createdExpense({
+        date, 
+        from_station: fromStation,
+        to_station: toStation,
+        is_round_trip: isRoundTrip,
+        note,
+      });
+
+      // 方式①：返ってきた作成済みデータを先頭に追加
+      // ※ APIが「作成されたレコード」を返す設計の場合に有効
+      // ※ 方式②として、loadExpenses() で再取得する方法もある（整合性は高いが遅い）
+      setExpenses((prev) => [created, ...prev]);
+
+      // 送信成功したのでフォームをリセット
+      setDate("");
+      setFromStation("");
+      setToStation("");
+      setIsRoundTrip("");
+      setNote("");
+    } catch (e) {
+      // createExpense 側で整形したメッセージを表示
+      setSubmitError(e.message);
+    } finally {
+      // 成功でも失敗でも必ず送信中フラグOFF
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div style={{ padding: "20px"}}>
+    <div style={{ padding: "20px", maxWidth: 900}}>
       <h1>Commute Expense App</h1>
 
-      {/* API 疎通確認結果を表示 */}
-      <p>Ping result: {message}</p>
+      {/* 一覧取得エラー（ページ上部に表示） */}
+      {error && <p style={{color: "red"}}>{error}</p>}
 
-      {/* 一覧取得エラー表示 */}
-      {error && <p style ={{ color : "red" }}>{error}</p>}
+      <h2>交通費申請</h2>
+
+      {/* onSubmit は form の submit イベントで発火する} */}
+      <form
+      onSubmit={onSubmit}
+      style={{ border: "1px solid #ccc", padding: 12, marginBottom: 20}}
+      >
+        {/* 登録エラーはフォームの近くに表示すると親切 */}
+        {submitError && <p style={{color: "red"}}>{submitError}</p>}
+
+        <div style={{ display: "grid", gap: 10}}>
+          <label>
+            日付（必須）
+            <br />
+            <input
+            type="date"
+            value={date} // state を入力時に反映（controlled）
+            onChange={(e) => setDate(e.target.value)} // 入力変更で state 更新
+            />
+          </label>
+
+          <label>
+            出発駅（定期内途中駅）（必須）
+            <br />
+            <input
+            type="text"
+            value={fromStation}
+            onChange={(e) => setFromStation(e.target.value)}
+            placeholder="例：新宿"
+            />
+          </label>
+
+          <label>
+            <input
+            tyle="checkbox"
+            checked={isRoundTrip}
+            onChange={(e) => setIsRoundTrip(e.target.checked)}
+            />
+            往復
+          </label>
+
+          {/* 送信中は disabled にして二重送信を防ぐ */}
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "送信中..." : "申請を登録"}
+          </button>
+        </div>
+      </form>
 
       <h2>申請一覧</h2>
+
+      {/* 再度読み込み（一覧を取り出す） */}
+      <button onClick={loadExpenses} style={{ marginBottom: 10}}>
+      再読み込み
+      </button>
+
       <table border="1" cellPadding="8">
         <thead>
           <tr>
@@ -57,17 +169,24 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {expenses.map((e) => (
-            <tr key={e.id}>
-              <td>{e.date}</td>
+          {expenses.map((ex) => (
+            <tr key={ex.id}>
+              <td>{ex.date}</td>
               <td>
-                {e.from_station} → {e.to_station}
+                {ex.from_station} → {ex.to_station} 
               </td>
-              <td>{e.is_round_trip ? "往復" : "片道"}</td>
-              <td>{e.calculated_fare} 円</td>
-              <td>{e.note}</td>
+              <td>{ex.is_round_trip ? "往復" : "片道"}</td>
+              <td>{ex.calculated_fare} 円</td>
+              <td>{ex.note}</td>
             </tr>
           ))}
+
+          {/* 一覧が空のときの表示（UX改善） */}
+          {expenses.length === 0 &&(
+            <tr>
+              <td colSpan="5">まだ申請がありません</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
