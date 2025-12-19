@@ -1,5 +1,5 @@
-import { use, useEffect, useState } from "react";
-import { fetchExpenses } from "./api";
+import { useEffect, useState } from "react";
+import { fetchExpenses, createExpense } from "./api";
 
 function App() {
   // -------------------------
@@ -54,13 +54,13 @@ function App() {
    */
   const onSubmit = async (e) => {
     // fomr のデフォルト動作（ページリロード）を止める
-    e.prevemtDefault();
+    e.preventDefault();
 
     setSubmitError("") // 過去の送信エラーをクリア
 
     // 最低バリデーション（UX改善）
     // 本格的な検証はバックエンドでも必ず行う（フロントは補助）
-    if (!data || !fromStation || !toStation) {
+    if (!date || !fromStation || !toStation) {
       setSubmitError("日付・出発駅・目的駅は必須です");
       return;
     }
@@ -68,7 +68,7 @@ function App() {
     setIsSubmitting(true); // 送信中ふらぐON（ボタンdisabledなどに使う）
     try {
       // APIへ送る payload（DRF のフィールド名に合わせる）
-      const created = await createdExpense({
+      const created = await createExpense({
         date, 
         from_station: fromStation,
         to_station: toStation,
@@ -85,7 +85,7 @@ function App() {
       setDate("");
       setFromStation("");
       setToStation("");
-      setIsRoundTrip("");
+      setIsRoundTrip(false);
       setNote("");
     } catch (e) {
       // createExpense 側で整形したメッセージを表示
@@ -136,8 +136,19 @@ function App() {
           </label>
 
           <label>
+            目的駅（定期外）（必須）
+            <br />
             <input
-            tyle="checkbox"
+            type="text"
+            value={toStation}
+            onChange={(e) => setToStation(e.target.value)}
+            placeholder="例：立川"
+            />
+          </label>
+
+          <label>
+            <input
+            type="checkbox"
             checked={isRoundTrip}
             onChange={(e) => setIsRoundTrip(e.target.checked)}
             />
