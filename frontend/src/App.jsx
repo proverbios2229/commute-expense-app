@@ -53,7 +53,7 @@ function App() {
    * - 成功したら一覧に即反映して UX を良くする
    */
   const onSubmit = async (e) => {
-    // fomr のデフォルト動作（ページリロード）を止める
+    // form のデフォルト動作（ページリロード）を止める
     e.preventDefault();
 
     setSubmitError("") // 過去の送信エラーをクリア
