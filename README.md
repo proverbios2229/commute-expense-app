@@ -12,12 +12,52 @@ Session 認証を用いた API 連携を実装している。
 
 ---
 
+## 開発環境（バックエンド）
+
+- Python 仮想環境（.venv）を使用
+- 仮想環境は Git 管理せず、各自で作成する方針
+  - OS / Python バージョン差異による問題を避けるため
+
+---
+
 ## 主な機能
 
 - Django 管理画面によるユーザー管理
 - 定期券（CommuterPass）の登録・管理
 - 交通費申請（Expense）の一覧取得
 - React ↔ Django API 連携（Session 認証）
+
+---
+
+## Lint / Code Quality
+
+## フロントエンド
+- ESLint（Flat Config）を使用
+- React / React Hooks 推奨ルールを適用
+- JSX パースエラー発生時に parserOptions を調整して解決
+- Vite + React 17+ 環境に対応した設定
+
+## バックエンド
+- Ruff（Python 用リンター）を使用
+  - 未使用 import や一般的なコーディングミスを検出
+- Django 標準の `manage.py check` による設定チェック
+
+---
+
+## 疎通確認用 Ping API（開発初期）
+
+初期開発時、React ↔ Django 間の API 疎通および
+Session 認証（Cookie 送信）の確認を目的として
+`/api/ping/` エンドポイントを作成した。
+
+（※ 現在は疎通確認が完了したため、UI からは削除）
+
+---
+
+## エラーハンドリング / 監視（今後の拡張予定）
+
+- 現在は Django の標準エラーログおよびデバッグ画面で対応
+- 本番環境を想定した段階で、Sentry 等のエラー監視ツール導入を検討予定
 
 ---
 
@@ -95,4 +135,3 @@ Django ではクロスオリジンでの POST/PUT/DELETE リクエスト時に
 - CSRF 設定は **主に状態変更系リクエスト（POST/PUT/DELETE）で問題になる**
 - 403 エラーは CSRF / CORS / 認証など複数の原因があり得るため、
   ログと通信内容を分けて切り分けることが重要
-
