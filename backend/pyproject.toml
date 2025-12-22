@@ -1,0 +1,12 @@
+[tool.ruff]
+# 一行の最大文字数（Blackのデフォルトと合わせる）
+line-length = 88
+
+# プロジェクトで想定する Python バージョン
+target-version = "py311"
+
+[tool.ruff.lint]
+# E: PEP8系の基本ルール
+# F: 未使用import・未使用変数など（バグ防止）
+# I: import順序チェック（isort相当）
+select = ["E", "F", "I"]
