@@ -30,7 +30,7 @@
 S-01	ログイン画面（将来）	ユーザー認証。MVPフェーズでは後回し／Django管理画面で代用の可能性あり	/api/auth/login（将来）
 S-02	ダッシュボード	ユーザーの定期券登録状況と最近の申請一覧を表示	/api/me, /api/expenses?recent=true
 S-03	定期券情報登録画面	自分の定期券区間（始発駅〜終着駅、有効期間）を登録・更新	GET/PUT /api/commuter-pass/
-S-04	交通費申請入力画面	定期券内途中駅＋定期外駅などを入力し、運賃を自動計算して申請を登録	POST /api/expenses/, POST /api/fare/
+S-04	交通費申請入力画面	定期券内途中駅＋定期外駅などを入力し、運賃を自動計算して申請を登録（日付入力は単日入力ではなく複数日選択（カレンダーUI）に対応する）	POST /api/expenses/, POST /api/fare/, POST /api/expenses/bulk/
 S-05	申請一覧画面（社員用）	自分の交通費申請履歴を一覧表示（年月で絞り込み）	GET /api/expenses?month=YYYY-MM
 S-06	申請一覧画面（総務用）	全社員の申請一覧を表示し、CSVダウンロードを可能にする	GET /api/admin/expenses, /api/export
 ※ S-06 は最初は「Django管理画面で代用」でもOK（実装負荷を下げるため）。
@@ -69,6 +69,7 @@ note	string	No	備考（会議名・訪問先など）
 created_at	datetime	Yes	登録日時
 updated_at	datetime	Yes	更新日時
 ※MVPでは承認ステータス（承認中／承認済など）は持たせず、　将来 status カラム（enum的なstring）で拡張可能な設計とする。
+※Expense は（user, date, from_station, to_station, is_round_trip）を同一条件で重複登録しない（MVP）
 
 4.4 FareRule（運賃テーブル・MVP用の簡易テーブル）
 実務では外部APIを使うべきだが、MVPではアプリ内に簡易的な運賃テーブルを持っておく。
@@ -98,6 +99,7 @@ fare_one_way	int	Yes	片道運賃
 * GET /api/expenses/
     * 自分の申請一覧を取得
     * クエリパラメータ例：?month=2025-12
+      
 * POST /api/expenses/
     * 申請の新規登録
     * リクエスト例（JSON）：{
@@ -107,7 +109,19 @@ fare_one_way	int	Yes	片道運賃
     *   "is_round_trip": true,
     *   "note": "客先訪問"
     * }
-    * 
+    
+* POST /api/expenses/bulk/
+    * 複数日を一括で交通費申請登録（サーバ側で運賃計算）
+    * リクエスト例（JSON）：{
+    *   "dates": ["2025-12-01", "2025-12-03", "2025-12-10"],
+    *   "from_station": "新宿",
+    *   "to_station": "立川",
+    *   "is_round_trip": true,
+    *   "note": "客先訪問"
+    * }
+    * Response：作成されたExpenseの配列（201）
+    * Error：400（fare未登録、dates重複、31件超など）
+    
     * サーバー側で運賃計算を行い、calculated_fare を設定して保存する。
 
 5.4 運賃計算API（必要に応じて分離）
