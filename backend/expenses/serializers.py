@@ -1,11 +1,6 @@
 from rest_framework import serializers
+from django.utils.dateparse import parse_date
 from .models import CommuterPass, Expense, FareRule
-
-# Ping API が返す JSON の形を定義する Serializer
-# /api/ping/ で {"message": "ok"} を返す
-# (本番APIではバリデーションや型チェックを行う)
-class PingSerializer(serializers.Serializer):
-    message = serializers.CharField()
 
 # ----------------------------------
 # CommuterPass（定期券）モデルのシリアライザ
@@ -82,3 +77,40 @@ class FareRuleSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id"
         ]
+
+
+
+# ----------------------------------
+# BulkExpenseCreate（複数日まとめて申請の入力専用）モデルのシリアライザ
+# この Serializer は「入力バリデーション」まで担当する
+# 実際のレコード作成（Expenseを複数件保存する）は View / Service 側で行う
+# （transaction管理や、1件でも失敗した時のロールバック等をView側で制御しやすくするため）
+# ----------------------------------
+class BulkExpenseCreateSerializer(serializers.Serializer):
+    dates = serializers.ListField(
+        child=serializers.DateField(),
+        allow_empty=False,
+    )
+
+    # 出発/到着駅（簡易に文字列。必要なら駅マスタ参照やchoice化を検討）
+    from_station = serializers.CharField(max_length=100)
+    to_station = serializers.CharField(max_length=100)
+
+    # 往復かどうか（未指定なら片道扱い）
+    is_round_trip = serializers.BooleanField(required=False, default=False)
+    
+    # 備考（未指定/空文字OK）
+    note = serializers.CharField(max_length=255, required=False, allow_blank=True, default="")
+
+    # dates フィールド単体のバリデーション
+    def validate_dates(self, dates):
+        # 重複日付の除去/検知（MVP：ユーザーの入力ミスをエラーにする）
+        unique = list(dict.fromkeys(dates))
+        if len(unique) != len(dates):
+            raise serializers.ValidationError("同じ日付が複数選択されています。")
+        
+        # 最大件数（要件：31日）
+        if len(dates) > 31:
+            raise serializers.ValidationError("一括申請は最大31日までです。")
+        
+        return dates
