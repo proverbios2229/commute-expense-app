@@ -119,7 +119,7 @@ class ExpenseBulkCreateView(APIView):
         if existing_dates:
             # date 型を文字列にして返す(フロント表示の利便性優先)
             dup_list = sorted([d.isoformat() for d in existing_dates])
-            raise ValidationError({"dates": f"既に新星が存在する日付があります: {', '.join(dup_list)}"})
+            raise ValidationError({"dates": f"既に申請が存在する日付があります: {', '.join(dup_list)}"})
         
         # ルートは共通のため、運賃計算は1回だけ行う（効率化）
         try:
