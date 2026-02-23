@@ -22,7 +22,7 @@ urlpatterns = [
     # POST : 新規交通費申請（運賃はサーバ側で計算）
     path("api/expenses/", ExpenseListCreateView.as_view()),
 
-    # 交通費申請API（単発）（複数日一括）
+    # 交通費申請API（複数日一括）
     # POST : dates[] で指定した複数日をまとめて申請
     #    ※ 全件成功 or 全件失敗（transaction 管理）
     path("api/expenses/bulk/", ExpenseBulkCreateView.as_view()),
