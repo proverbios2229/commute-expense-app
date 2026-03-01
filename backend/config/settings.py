@@ -157,6 +157,18 @@ REST_FRAMEWORK = {
 CORS_ALLOW_ALL_ORIGINS = True
 #追記 end
 
+# ==============================
+# CSRF設定（React -> Django を許可）
+# ==============================
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# （開発用）CookieのSameSite設定
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 
 # Cookie（セッション）を含むクロスオリジン通信を許可する設定。
 # REACT 側の fetch で credentials: "include" を使う場合に必須。
