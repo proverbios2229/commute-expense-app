@@ -13,6 +13,10 @@ from .serializers import (
 )
 from .services.fare import calculate_fare
 from .services.exceptions import FareNotFoundError
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
+from django.utils.decorators import method_decorator
     
 class MyCommuterPassView(generics.RetrieveUpdateAPIView):
     """
@@ -146,3 +150,15 @@ class ExpenseBulkCreateView(APIView):
         # 作成した申請一覧を返却（フロントはそのまま表示更新できる）
         output = ExpenseSerializer(created, many=True).data
         return Response(output, status=status.HTTP_201_CREATED)
+
+@method_decorator(ensure_csrf_cookie, name="dispatch")
+class CsrfView(APIView):
+    """
+    CSRF Cookie をブラウザにセットするためにエンドポイント
+    GET /api/csrf/
+    """
+    authentication_clsses = []  # 認証なしでOK
+    permission_classes = []
+
+    def get(self, request):
+        return JsonResponse({"detail": "csrf cookie set"})

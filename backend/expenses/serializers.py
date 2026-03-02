@@ -50,7 +50,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fiels = [
+        read_only_fields = [
             "id", 
             "calculated_fare",  # ← フロントから受け取らず、API側で決定する
             "created_at", 

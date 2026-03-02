@@ -150,11 +150,11 @@ REST_FRAMEWORK = {
 # CORS設定
 # ==============================
 
-# React(localhost:5137)など、Djangoとは異なるオジリンからのAPIアクセスを許可する設定
+# React(localhost:5173)など、Djangoとは異なるオジリンからのAPIアクセスを許可する設定
 # ブラウザによる「別ドメイン通信ブロック」を防ぐために必要。
 
 # ※本番環境では必ず False にし、許可オリジンを限定すること。
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
 #追記 end
 
 # ==============================
@@ -176,3 +176,11 @@ SESSION_COOKIE_SAMESITE = "Lax"
 # これが False のままだと、ログイン済みでも、API 側では「未ログイン」と判断される
 # React（App.jsx）の「credentials: "include"」を正しく機能させるために必要
 CORS_ALLOW_CREDENTIALS = True
+
+# ==============================
+# CORS設定
+# ==============================
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]

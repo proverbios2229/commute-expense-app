@@ -4,6 +4,7 @@ from expenses.views import (
     MyCommuterPassView, 
     ExpenseListCreateView,
     ExpenseBulkCreateView,
+    CsrfView,
 )
 
 #  ※「'」から「"」へ統一
@@ -26,4 +27,6 @@ urlpatterns = [
     # POST : dates[] で指定した複数日をまとめて申請
     #    ※ 全件成功 or 全件失敗（transaction 管理）
     path("api/expenses/bulk/", ExpenseBulkCreateView.as_view()),
+
+    path("api/csrf/", CsrfView.as_view()),
 ]
