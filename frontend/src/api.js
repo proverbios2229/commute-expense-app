@@ -2,6 +2,8 @@
 // 環境（開発 / 本番）ごとに切り替えやすくするため定数化
 // 「http://127.0.0.1:8000」から「http://localhost:8000」へ変更
 // そうじゃないと、未ログイン扱い（IsAuthenticatedで弾かれてる）になる
+// const BASE_URL = "http://localhost:8000";
+
 const BASE_URL = "http://localhost:8000";
 
 // 交通費一覧を取得する API 呼び出し関数
@@ -10,17 +12,13 @@ export async function fetchExpenses() {
     // Django の API にリクエストを送信（ Get /api/expenses/ ）
     // Session 認証を利用するため、credentials: "include" により、セッション Cookie を送信する
     const res = await fetch(`${BASE_URL}/api/expenses/`, {
+        method: "GET",
         credentials: "include",
     }); 
 
-    // HTTP ステータスが 200 系以外の場合はエラーとする
-    // 呼び出し元で catch してエラーハンドリングを行う
-    if (!res.ok) {
-        throw new Error("Failed to fetch expenses");
-    }
-
-    // 正常時は JSON データを返却
-    return res.json();
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data?.detail || "一覧取得に失敗しました");
+    return data;
 }
 
 /** 
@@ -33,6 +31,7 @@ export async function createExpense(payload) {
         credentials: "include", // セッション Cookie を送信
         headers: {
             "Content-Type": "application/json", // JSオブジェクト → JSON
+            ...csrfHeader(),
         },
         body: JSON.stringify(payload),
     });
@@ -46,12 +45,58 @@ export async function createExpense(payload) {
         const message = 
         data?.fare ||
         data?.detail ||
-        "申請の登録に失敗しました（入力内容を確認してください";
+        "申請の登録に失敗しました（入力内容を確認してください）";
 
         // 配列エラーの場合は改行で結合
-        throw new Error(Array.isArray(message) ? message.json("\n") : message);
+        throw new Error(Array.isArray(message) ? message.join("\n") : message);
     }
     
     // 作成された Expense データを返す
     return data; 
+}
+
+export async function createExpenseBulk(payload) {
+    const res = await fetch(`${BASE_URL}/api/expenses/bulk/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+            "Content-Type": "application/json",
+            ...csrfHeader(),
+        },
+        body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+        const message =
+        data?.dates ||
+        data?.fare ||
+        data?.detail ||
+        "一括申請に失敗しました";
+        throw new Error(Array.isArray(message) ? message.join("\n"): message);
+    }
+
+    return data; 
+
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+    return "";
+}
+
+export async function initCsrf() {
+    // csrftoken cookie をセットさせる
+    await fetch(`${BASE_URL}/api/csrf/`, {
+        method: "GET",
+        credentials: "include",
+    });
+}
+
+function csrfHeader() {
+    const token = getCookie("csrftoken");
+    return token ? { "X-CSRFToken": token } : {};
 }

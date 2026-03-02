@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchExpenses, createExpense, createExpenseBulk } from "./api";
+import { fetchExpenses, createExpense, createExpenseBulk, initCsrf } from "./api";
 
 import { DayPicker } from "react-day-picker";
 import "react-day-picker/dist/style.css";
@@ -70,8 +70,18 @@ function App() {
 
   // 初回レンダリング時に一回だけ一覧を読み込む
   useEffect(() => {
-    loadExpenses();
-    // 依存配列 [] は「初回だけ実行」の意味
+    (async () => {
+      try {
+        // CSRF Cookie を取得（/api/csrf/ を叩いて csrftoken をセット）
+        await initCsrf();
+
+        // 一覧を取得
+        await loadExpenses();
+      } catch (e) {
+        // initCsrf または loadExpenses のどちらかが失敗したとき
+        setError(e.message);
+      }
+    })();
   }, []);
 
   const resetCommonInputs = () => {
